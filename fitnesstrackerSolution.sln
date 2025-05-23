@@ -1,18 +1,31 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fitnesstracker.api", "fitnesstracker.api\fitnesstracker.api.csproj", "{037867E7-B151-46C5-B772-4B3C8B32F952}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fitnesstracker.model", "fitnesstracker.model\fitnesstracker.model.csproj", "{89B41ECC-DA2B-4ACD-A1BB-5D5AF1D19B11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fitnesstracker.data", "fitnesstracker.data\fitnesstracker.data.csproj", "{CD3CEDCB-5D39-4766-B081-3C4E5DD7DFE8}"
+EndProject
 Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Debug|x64 = Debug|x64
+        Debug|x86 = Debug|x86
+        Release|Any CPU = Release|Any CPU
+        Release|x64 = Release|x64
+        Release|x86 = Release|x86
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {037867E7-B151-46C5-B772-4B3C8B32F952}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {037867E7-B151-46C5-B772-4B3C8B32F952}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {89B41ECC-DA2B-4ACD-A1BB-5D5AF1D19B11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {89B41ECC-DA2B-4ACD-A1BB-5D5AF1D19B11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {CD3CEDCB-5D39-4766-B081-3C4E5DD7DFE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {CD3CEDCB-5D39-4766-B081-3C4E5DD7DFE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    EndGlobalSection
 EndGlobal
