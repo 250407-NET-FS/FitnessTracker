@@ -3,10 +3,21 @@ using FitnessTracker.Api.Exercises.Commands;
 using FitnessTracker.Api.Features.Queries;
 using FitnessTracker.Api.client.Commands;
 using FitnessTracker.Api.Exercises.Queries;
+using FitnessTracker.Api.Authentication;
+using FitnessTracker.Api.UserExercises.Commands;
+using FitnessTracker.Api.UserExercises.Queries;
+using FitnessTracker.Api.Features.Extensions;
+
 using FitnessTracker.Data;
 using FitnessTracker.Model;
+using FitnessTracker.Api;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +27,41 @@ builder.Services.AddDbContext<FitnessTrackerDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "FitnessTracker API", Version = "v1" });
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "FitnessTracker API",
+        Version = "v1",
+        Description = "API for managing fitness exercises and user tracking"
+    });
+
+    c.TagActionsBy(api => new[] { api.GroupName ?? api.HttpMethod });
+
+
+    c.OrderActionsBy(apiDesc => apiDesc.GroupName);
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header. Enter your token ",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
 builder.Services.AddMediatR(cfg =>
@@ -41,7 +86,73 @@ builder.Services.AddExceptionHandler(options =>
     };
 });
 
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<FitnessTrackerDbContext>()
+    .AddDefaultTokenProviders();
+
+var jwtKey = builder.Configuration["JwtSettings:Key"] ?? "your-default-secret-key-that-is-long-enough-for-sha256";
+var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "fitnessTrackerApi",
+        ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "fitnessTrackerClient",
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Headers["Authorization"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(accessToken) && accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                accessToken = accessToken.Substring(7);
+            }
+
+            context.Token = accessToken;
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// Add authorization services
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<FitnessTrackerDbContext>();
+        dbContext.Database.EnsureCreated();
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while creating the database.");
+}
+
+// Seed admin user
+using (var scope = app.Services.CreateScope())
+{
+    await SeedData.InitializeAsync(scope.ServiceProvider);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,11 +161,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 // Enable CORS
 app.UseCors("AllowAll");
 app.UseExceptionHandler();
 
-app.MapGet("/health", () => Results.Ok("API is running"))
+app.MapGet("/APIhealth", () => Results.Ok("API is running"))
     .WithName("HealthCheck")
     .WithOpenApi();
 
@@ -67,7 +180,7 @@ app.MapPost("/exercises", async (CreateExerciseCommand command, IMediator mediat
     return Results.Created($"/exercises/{id}", id);
 })
 .WithName("CreateExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapGet("/exercises", async (IMediator mediator) =>
 {
@@ -75,7 +188,7 @@ app.MapGet("/exercises", async (IMediator mediator) =>
     return Results.Ok(exercises);
 })
 .WithName("GetAllExercises")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapGet("/exercises/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -83,7 +196,7 @@ app.MapGet("/exercises/{id}", async (Guid id, IMediator mediator) =>
     return exercise is not null ? Results.Ok(exercise) : Results.NotFound();
 })
 .WithName("GetExerciseById")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapPut("/exercises/{id}", async (Guid id, UpdateExerciseCommand command, IMediator mediator) =>
 {
@@ -91,7 +204,7 @@ app.MapPut("/exercises/{id}", async (Guid id, UpdateExerciseCommand command, IMe
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("UpdateExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapDelete("/exercises/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -99,7 +212,7 @@ app.MapDelete("/exercises/{id}", async (Guid id, IMediator mediator) =>
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("DeleteExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 /////////////////////////////////////////////////////////////////////////////////////////////
 // User endpoints
 app.MapPost("/users", async (CreateUserCommand command, IMediator mediator) =>
@@ -108,7 +221,7 @@ app.MapPost("/users", async (CreateUserCommand command, IMediator mediator) =>
     return Results.Created($"/users/{id}", id);
 })
 .WithName("CreateUser")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapGet("/users", async (IMediator mediator) =>
 {
@@ -116,7 +229,7 @@ app.MapGet("/users", async (IMediator mediator) =>
     return Results.Ok(users);
 })
 .WithName("GetAllUsers")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapGet("/users/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -124,7 +237,7 @@ app.MapGet("/users/{id}", async (Guid id, IMediator mediator) =>
     return user is not null ? Results.Ok(user) : Results.NotFound();
 })
 .WithName("GetUserById")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapPut("/users/{id}", async (Guid id, UpdateUserCommand command, IMediator mediator) =>
 {
@@ -132,7 +245,7 @@ app.MapPut("/users/{id}", async (Guid id, UpdateUserCommand command, IMediator m
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("UpdateUser")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -140,6 +253,44 @@ app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("DeleteUser")
-.WithOpenApi();
+.WithTag("User")
+.RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+
+app.MapLoginEndpoint();
+
+//////////////////////////// User - Exercise 
+app.MapPost("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, ExerciseDetailsRequest details, IMediator mediator) =>
+{
+    var command = new AssignExerciseToUserCommand(userId, exerciseId, details.TargetSets, details.TargetReps);
+    var success = await mediator.Send(command);
+    return success ? Results.NoContent() : Results.NotFound();
+})
+.WithName("AssignExerciseToUser")
+.WithTag("User Exercises");
+
+app.MapDelete("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, IMediator mediator) =>
+{
+    var success = await mediator.Send(new RemoveExerciseFromUserCommand(userId, exerciseId));
+    return success ? Results.NoContent() : Results.NotFound();
+})
+.WithName("RemoveExerciseFromUser")
+.WithTag("User Exercises");
+
+app.MapGet("/users/{userId}/exercises", async (Guid userId, IMediator mediator) =>
+{
+    var exercises = await mediator.Send(new GetUserExercisesQuery(userId));
+    return exercises.Any() ? Results.Ok(exercises) : Results.NotFound();
+})
+.WithName("GetUserExercises")
+.WithTag("User Exercises");
+
+app.MapGet("/exercises/{exerciseId}/users", async (Guid exerciseId, IMediator mediator) =>
+{
+    var users = await mediator.Send(new GetExerciseUsersQuery(exerciseId));
+    return users.Any() ? Results.Ok(users) : Results.NotFound();
+})
+.WithName("GetExerciseUsers")
+.WithTag("User Exercises");
 
 app.Run();
