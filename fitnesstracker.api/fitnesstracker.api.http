@@ -1,6 +1,6 @@
 @fitnesstracker.api_HostAddress = http://localhost:5293
 
-GET {{fitnesstracker.api_HostAddress}}/weatherforecast/
+GET {{fitnesstracker.api_HostAddress}}/fitnesstracker/
 Accept: application/json
 
 ###
