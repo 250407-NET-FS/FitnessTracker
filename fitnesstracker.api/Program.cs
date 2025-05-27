@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,30 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "FitnessTracker API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header. Enter your token ",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
 builder.Services.AddMediatR(cfg =>
@@ -52,7 +77,6 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<FitnessTrackerDbContext>()
     .AddDefaultTokenProviders();
 
-// Configure JWT authentication
 var jwtKey = builder.Configuration["JwtSettings:Key"] ?? "your-default-secret-key-that-is-long-enough-for-sha256";
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
@@ -63,6 +87,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -72,6 +97,22 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "fitnessTrackerApi",
         ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "fitnessTrackerClient",
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Headers["Authorization"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(accessToken) && accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                accessToken = accessToken.Substring(7);
+            }
+
+            context.Token = accessToken;
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -99,7 +140,7 @@ app.UseAuthorization();
 app.UseCors("AllowAll");
 app.UseExceptionHandler();
 
-app.MapGet("/health", () => Results.Ok("API is running"))
+app.MapGet("/APIhealth", () => Results.Ok("API is running"))
     .WithName("HealthCheck")
     .WithOpenApi();
 

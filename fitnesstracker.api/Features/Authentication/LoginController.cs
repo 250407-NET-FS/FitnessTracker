@@ -44,6 +44,8 @@ public static class LoginController
                     claims.Add(new Claim(ClaimTypes.Role, role));
                 }
 
+                Console.WriteLine($"User {user.UserName} has roles: {string.Join(", ", roles)}");
+
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
                     config["JwtSettings:Key"] ?? "your-default-secret-key-that-is-long-enough-for-sha256"));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -57,10 +59,12 @@ public static class LoginController
                     signingCredentials: creds
                 );
 
-                return Results.Ok(new LoginResponse(
-                    new JwtSecurityTokenHandler().WriteToken(token),
-                    expiry
-                ));
+                return Results.Ok(new
+                {
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                    expiration = expiry,
+                    note = "Use this token in the Authorization header"
+                });
             }
             catch (Exception ex)
             {
