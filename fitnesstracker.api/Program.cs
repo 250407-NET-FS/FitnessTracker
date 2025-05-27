@@ -3,10 +3,17 @@ using FitnessTracker.Api.Exercises.Commands;
 using FitnessTracker.Api.Features.Queries;
 using FitnessTracker.Api.client.Commands;
 using FitnessTracker.Api.Exercises.Queries;
+using FitnessTracker.Api.Authentication;
+
 using FitnessTracker.Data;
 using FitnessTracker.Model;
+using FitnessTracker.Api;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +48,43 @@ builder.Services.AddExceptionHandler(options =>
     };
 });
 
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<FitnessTrackerDbContext>()
+    .AddDefaultTokenProviders();
+
+// Configure JWT authentication
+var jwtKey = builder.Configuration["JwtSettings:Key"] ?? "your-default-secret-key-that-is-long-enough-for-sha256";
+var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "fitnessTrackerApi",
+        ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "fitnessTrackerClient",
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+    };
+});
+
+// Add authorization services
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+// Seed admin user
+using (var scope = app.Services.CreateScope())
+{
+    await SeedData.InitializeAsync(scope.ServiceProvider);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,6 +93,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 // Enable CORS
 app.UseCors("AllowAll");
 app.UseExceptionHandler();
@@ -140,6 +185,10 @@ app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("DeleteUser")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+
+app.MapLoginEndpoint();
 
 app.Run();

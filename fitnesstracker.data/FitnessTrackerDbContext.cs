@@ -1,9 +1,11 @@
 using FitnessTracker.Model;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace FitnessTracker.Data;
 
-public class FitnessTrackerDbContext : DbContext
+public class FitnessTrackerDbContext : IdentityDbContext<IdentityUser>
 {
     public FitnessTrackerDbContext(DbContextOptions<FitnessTrackerDbContext> options)
         : base(options)
@@ -24,12 +26,13 @@ public class FitnessTrackerDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.TargetMuscleGroup).HasMaxLength(100);
         });
+
         modelBuilder.Entity<User>(entity =>
-    {
-        entity.HasKey(u => u.Id);
-        entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
-        entity.Property(u => u.Email).IsRequired().HasMaxLength(100);
-        entity.Property(u => u.Password).IsRequired().HasMaxLength(100);
-    });
+        {
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Email).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Password).IsRequired().HasMaxLength(100);
+        });
     }
 }
