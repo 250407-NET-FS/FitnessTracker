@@ -1,35 +1,24 @@
-# Stage 1: Build application
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy csproj files and restore dependencies
 COPY ["fitnesstracker.api/fitnesstracker.api.csproj", "fitnesstracker.api/"]
 COPY ["fitnesstracker.data/fitnesstracker.data.csproj", "fitnesstracker.data/"]
 COPY ["fitnesstracker.model/fitnesstracker.model.csproj", "fitnesstracker.model/"]
 RUN dotnet restore "fitnesstracker.api/fitnesstracker.api.csproj"
 
-# Copy everything else and build the app
 COPY . .
 RUN dotnet build "fitnesstracker.api/fitnesstracker.api.csproj" -c Release -o /app/build
 
-# Stage 2: Publish the application
 FROM build AS publish
 RUN dotnet publish "fitnesstracker.api/fitnesstracker.api.csproj" -c Release -o /app/publish
 
-# Stage 3: Create the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Set environment variables
 ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-# Add wait-for-it script to wait for SQL Server to be ready
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /wait-for-it.sh
 
-# Set the entrypoint to first wait for SQL Server, then start the app
-ENTRYPOINT ["/bin/bash", "-c", "/wait-for-it.sh sqlserver:1433 -t 120 -- dotnet fitnesstracker.api.dll"]
-
+ENTRYPOINT ["dotnet", "fitnesstracker.api.dll"]
 EXPOSE 80

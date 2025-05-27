@@ -22,12 +22,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5293:80"
+      - "5200:80"
     depends_on:
       sqlserver:
         condition: service_healthy
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FitnessTracker;User Id=sa;Password=Password_123#;TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Development
     restart: on-failure
 
 volumes:
