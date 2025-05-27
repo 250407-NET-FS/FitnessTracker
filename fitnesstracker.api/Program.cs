@@ -6,6 +6,7 @@ using FitnessTracker.Api.Exercises.Queries;
 using FitnessTracker.Api.Authentication;
 using FitnessTracker.Api.UserExercises.Commands;
 using FitnessTracker.Api.UserExercises.Queries;
+using FitnessTracker.Api.Features.Extensions;
 
 using FitnessTracker.Data;
 using FitnessTracker.Model;
@@ -26,7 +27,17 @@ builder.Services.AddDbContext<FitnessTrackerDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "FitnessTracker API", Version = "v1" });
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "FitnessTracker API",
+        Version = "v1",
+        Description = "API for managing fitness exercises and user tracking"
+    });
+
+    c.TagActionsBy(api => new[] { api.GroupName ?? api.HttpMethod });
+
+
+    c.OrderActionsBy(apiDesc => apiDesc.GroupName);
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -155,7 +166,7 @@ app.MapPost("/exercises", async (CreateExerciseCommand command, IMediator mediat
     return Results.Created($"/exercises/{id}", id);
 })
 .WithName("CreateExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapGet("/exercises", async (IMediator mediator) =>
 {
@@ -163,7 +174,7 @@ app.MapGet("/exercises", async (IMediator mediator) =>
     return Results.Ok(exercises);
 })
 .WithName("GetAllExercises")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapGet("/exercises/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -171,7 +182,7 @@ app.MapGet("/exercises/{id}", async (Guid id, IMediator mediator) =>
     return exercise is not null ? Results.Ok(exercise) : Results.NotFound();
 })
 .WithName("GetExerciseById")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapPut("/exercises/{id}", async (Guid id, UpdateExerciseCommand command, IMediator mediator) =>
 {
@@ -179,7 +190,7 @@ app.MapPut("/exercises/{id}", async (Guid id, UpdateExerciseCommand command, IMe
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("UpdateExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 
 app.MapDelete("/exercises/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -187,7 +198,7 @@ app.MapDelete("/exercises/{id}", async (Guid id, IMediator mediator) =>
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("DeleteExercise")
-.WithOpenApi();
+.WithTag("Exercises");
 /////////////////////////////////////////////////////////////////////////////////////////////
 // User endpoints
 app.MapPost("/users", async (CreateUserCommand command, IMediator mediator) =>
@@ -196,7 +207,7 @@ app.MapPost("/users", async (CreateUserCommand command, IMediator mediator) =>
     return Results.Created($"/users/{id}", id);
 })
 .WithName("CreateUser")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapGet("/users", async (IMediator mediator) =>
 {
@@ -204,7 +215,7 @@ app.MapGet("/users", async (IMediator mediator) =>
     return Results.Ok(users);
 })
 .WithName("GetAllUsers")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapGet("/users/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -212,7 +223,7 @@ app.MapGet("/users/{id}", async (Guid id, IMediator mediator) =>
     return user is not null ? Results.Ok(user) : Results.NotFound();
 })
 .WithName("GetUserById")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapPut("/users/{id}", async (Guid id, UpdateUserCommand command, IMediator mediator) =>
 {
@@ -220,7 +231,7 @@ app.MapPut("/users/{id}", async (Guid id, UpdateUserCommand command, IMediator m
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("UpdateUser")
-.WithOpenApi();
+.WithTag("User");
 
 app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
 {
@@ -228,7 +239,7 @@ app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("DeleteUser")
-.WithOpenApi()
+.WithTag("User")
 .RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
@@ -242,7 +253,7 @@ app.MapPost("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid e
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("AssignExerciseToUser")
-.WithOpenApi();
+.WithTag("User Exercises");
 
 app.MapDelete("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, IMediator mediator) =>
 {
@@ -250,7 +261,7 @@ app.MapDelete("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("RemoveExerciseFromUser")
-.WithOpenApi();
+.WithTag("User Exercises");
 
 app.MapGet("/users/{userId}/exercises", async (Guid userId, IMediator mediator) =>
 {
@@ -258,7 +269,7 @@ app.MapGet("/users/{userId}/exercises", async (Guid userId, IMediator mediator) 
     return exercises.Any() ? Results.Ok(exercises) : Results.NotFound();
 })
 .WithName("GetUserExercises")
-.WithOpenApi();
+.WithTag("User Exercises");
 
 app.MapGet("/exercises/{exerciseId}/users", async (Guid exerciseId, IMediator mediator) =>
 {
@@ -266,6 +277,6 @@ app.MapGet("/exercises/{exerciseId}/users", async (Guid exerciseId, IMediator me
     return users.Any() ? Results.Ok(users) : Results.NotFound();
 })
 .WithName("GetExerciseUsers")
-.WithOpenApi();
+.WithTag("User Exercises");
 
 app.Run();

@@ -1,6 +1,0 @@
-@fitnesstracker.service_HostAddress = http://localhost:5259
-
-GET {{fitnesstracker.service_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
