@@ -235,9 +235,10 @@ app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
 app.MapLoginEndpoint();
 
 //////////////////////////// User - Exercise 
-app.MapPost("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, AssignExerciseToUserCommand command, IMediator mediator) =>
+app.MapPost("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, ExerciseDetailsRequest details, IMediator mediator) =>
 {
-    var success = await mediator.Send(command with { UserId = userId, ExerciseId = exerciseId });
+    var command = new AssignExerciseToUserCommand(userId, exerciseId, details.TargetSets, details.TargetReps);
+    var success = await mediator.Send(command);
     return success ? Results.NoContent() : Results.NotFound();
 })
 .WithName("AssignExerciseToUser")
