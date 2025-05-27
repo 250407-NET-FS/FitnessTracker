@@ -14,6 +14,7 @@ public class FitnessTrackerDbContext : IdentityDbContext<IdentityUser>
 
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserExercise> UserExercises => Set<UserExercise>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +34,24 @@ public class FitnessTrackerDbContext : IdentityDbContext<IdentityUser>
             entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
             entity.Property(u => u.Email).IsRequired().HasMaxLength(100);
             entity.Property(u => u.Password).IsRequired().HasMaxLength(100);
+        });
+
+        // User can have many exercises and exercises can be assigned to many users
+        modelBuilder.Entity<UserExercise>(entity =>
+        {
+            entity.HasKey(ue => new { ue.UserId, ue.ExerciseId });
+
+            entity.HasOne(ue => ue.User)
+                .WithMany(u => u.UserExercises)
+                .HasForeignKey(ue => ue.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ue => ue.Exercise)
+                .WithMany(e => e.UserExercises)
+                .HasForeignKey(ue => ue.ExerciseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(ue => ue.Notes).HasMaxLength(500);
         });
     }
 }

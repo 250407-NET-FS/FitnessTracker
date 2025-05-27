@@ -4,6 +4,8 @@ using FitnessTracker.Api.Features.Queries;
 using FitnessTracker.Api.client.Commands;
 using FitnessTracker.Api.Exercises.Queries;
 using FitnessTracker.Api.Authentication;
+using FitnessTracker.Api.UserExercises.Commands;
+using FitnessTracker.Api.UserExercises.Queries;
 
 using FitnessTracker.Data;
 using FitnessTracker.Model;
@@ -231,5 +233,38 @@ app.MapDelete("/users/{id}", async (Guid id, IMediator mediator) =>
 
 
 app.MapLoginEndpoint();
+
+//////////////////////////// User - Exercise 
+app.MapPost("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, AssignExerciseToUserCommand command, IMediator mediator) =>
+{
+    var success = await mediator.Send(command with { UserId = userId, ExerciseId = exerciseId });
+    return success ? Results.NoContent() : Results.NotFound();
+})
+.WithName("AssignExerciseToUser")
+.WithOpenApi();
+
+app.MapDelete("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid exerciseId, IMediator mediator) =>
+{
+    var success = await mediator.Send(new RemoveExerciseFromUserCommand(userId, exerciseId));
+    return success ? Results.NoContent() : Results.NotFound();
+})
+.WithName("RemoveExerciseFromUser")
+.WithOpenApi();
+
+app.MapGet("/users/{userId}/exercises", async (Guid userId, IMediator mediator) =>
+{
+    var exercises = await mediator.Send(new GetUserExercisesQuery(userId));
+    return exercises.Any() ? Results.Ok(exercises) : Results.NotFound();
+})
+.WithName("GetUserExercises")
+.WithOpenApi();
+
+app.MapGet("/exercises/{exerciseId}/users", async (Guid exerciseId, IMediator mediator) =>
+{
+    var users = await mediator.Send(new GetExerciseUsersQuery(exerciseId));
+    return users.Any() ? Results.Ok(users) : Results.NotFound();
+})
+.WithName("GetExerciseUsers")
+.WithOpenApi();
 
 app.Run();
