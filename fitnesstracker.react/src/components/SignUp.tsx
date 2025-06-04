@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, TextField, Typography, Alert, CircularProgress } from '@mui/material';
+import { Box, Button, TextField, Typography, Alert, CircularProgress, FormControlLabel, Checkbox } from '@mui/material';
 import { API_BASE_URL } from '../utils/api';
 
 interface SignUpProps {
@@ -12,6 +12,7 @@ const SignUp = ({ onClose, onSuccess }: SignUpProps) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isTrainer, setIsTrainer] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +41,8 @@ const SignUp = ({ onClose, onSuccess }: SignUpProps) => {
                 body: JSON.stringify({
                     name,
                     email,
-                    password
+                    password,
+                    isTrainer
                 }),
             });
 
@@ -108,6 +110,19 @@ const SignUp = ({ onClose, onSuccess }: SignUpProps) => {
                     disabled={isLoading}
                     required
                 />
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={isTrainer}
+                            onChange={(e) => setIsTrainer(e.target.checked)}
+                            disabled={isLoading}
+                            color="primary"
+                        />
+                    }
+                    label="Sign up as a Trainer"
+                />
+
                 <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Button onClick={onClose} disabled={isLoading}>
                         Cancel
@@ -119,7 +134,7 @@ const SignUp = ({ onClose, onSuccess }: SignUpProps) => {
                         disabled={isLoading}
                         endIcon={isLoading ? <CircularProgress size={24} /> : null}
                     >
-                        {isLoading ? 'Creating Account...' : 'Sign Up'}
+                        {isLoading ? 'Creating Account...' : isTrainer ? 'Sign Up as Trainer' : 'Sign Up as User'}
                     </Button>
                 </Box>
             </form>

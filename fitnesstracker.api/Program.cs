@@ -7,6 +7,7 @@ using FitnessTracker.Api.Authentication;
 using FitnessTracker.Api.UserExercises.Commands;
 using FitnessTracker.Api.UserExercises.Queries;
 using FitnessTracker.Api.Features.Extensions;
+using FitnessTracker.Api.client.Commands;
 
 using FitnessTracker.Data;
 using FitnessTracker.Model;
@@ -129,7 +130,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add authorization services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -215,7 +215,7 @@ app.MapDelete("/exercises/{id}", async (Guid id, IMediator mediator) =>
 .WithTag("Exercises");
 /////////////////////////////////////////////////////////////////////////////////////////////
 // User endpoints
-app.MapPost("/users", async (CreateUserCommand command, IMediator mediator) =>
+app.MapPost("/users", async (CreateUserWithRoleCommand command, IMediator mediator) =>
 {
     var id = await mediator.Send(command);
     return Results.Created($"/users/{id}", id);
