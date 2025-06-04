@@ -1,15 +1,45 @@
+import { useState, useEffect } from 'react';
 import { Box, Button, CssBaseline, ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material';
 import ButtonAppBar from './components/AppBar';
 import Banner from './components/Banner';
 import Footer from './components/Footer';
 import ExerciseCard from './components/ExerciseCard';
+import UserCard from './components/UserCard';
 import { ThemeProvider } from './context/ThemeContext';
 import { useTheme } from './context/ThemeContext';
 import './App.css';
 import { AuthProvider } from './context/AuthContext';
+import type { Exercise, User } from './types/types';
+import { fetchWithAuth } from './utils/api';
 
 function App() {
   const { isDarkMode } = useTheme();
+  const [view, setView] = useState<'exercises' | 'users'>('exercises');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchWithAuth(`/${view}`);
+        if (view === 'exercises') {
+          setExercises(data);
+        } else {
+          setUsers(data);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [view]);
 
   const theme = createTheme({
     palette: {
@@ -22,11 +52,6 @@ function App() {
       },
     },
   });
-
-  const sampleExercises = Array(6).fill(null).map((_, index) => ({
-    name: `Sample Exercise ${index + 1}`,
-    notes: `Sample Notes for exercise ${index + 1}`,
-  }));
 
   return (
     <MuiThemeProvider theme={theme}>
@@ -56,8 +81,20 @@ function App() {
             p: 2,
           }}
         >
-          <Button variant="contained" color="primary">Exercises</Button>
-          <Button variant="contained" color="primary">Users</Button>
+          <Button
+            variant="contained"
+            color={view === 'exercises' ? 'primary' : 'secondary'}
+            onClick={() => setView('exercises')}
+          >
+            Exercises
+          </Button>
+          <Button
+            variant="contained"
+            color={view === 'users' ? 'primary' : 'secondary'}
+            onClick={() => setView('users')}
+          >
+            Users
+          </Button>
         </Box>
 
         <Box
@@ -71,12 +108,21 @@ function App() {
             margin: '0 auto',
           }}
         >
-          {sampleExercises.map((exercise, index) => (
-            <ExerciseCard
-              key={index}
-              exercise={exercise}
-            />
-          ))}
+          {view === 'exercises' ? (
+            exercises.map((exercise) => (
+              <ExerciseCard
+                key={exercise.id}
+                exercise={exercise}
+              />
+            ))
+          ) : (
+            users.map((user) => (
+              <UserCard
+                key={user.id}
+                user={user}
+              />
+            ))
+          )}
         </Box>
         <Footer />
       </Box>
