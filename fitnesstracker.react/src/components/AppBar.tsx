@@ -9,9 +9,17 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function ButtonAppBar() {
     const { isDarkMode, toggleTheme } = useTheme();
+    const { isAuthenticated, userRole, logout } = useAuth();
+
+    const getLoginText = () => {
+        if (!isAuthenticated) return 'Login';
+        if (userRole === 'Trainer') return 'Trainer log out';
+        return 'Log out';
+    };
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -42,8 +50,9 @@ export default function ButtonAppBar() {
                         >
                             {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
                         </IconButton>
-                        <Button color="inherit">Login</Button>
-                        <Button color="inherit">Sign Up</Button>
+                        <Button color="inherit" onClick={isAuthenticated ? logout : undefined}>
+                            {getLoginText()}
+                        </Button>
                     </Stack>
                 </Toolbar>
             </AppBar>

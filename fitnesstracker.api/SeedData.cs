@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FitnessTracker.Api;
 
@@ -14,18 +15,45 @@ public static class SeedData
             await roleManager.CreateAsync(new IdentityRole("Admin"));
         }
 
-        var adminUser = await userManager.FindByNameAsync("admin@fitnesstracker.com");
+        if (!await roleManager.RoleExistsAsync("Trainer"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Trainer"));
+        }
+
+        var adminEmail = "admin@fitnesstracker.com";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
         {
             adminUser = new IdentityUser
             {
-                UserName = "admin@fitnesstracker.com",
-                Email = "admin@fitnesstracker.com",
+                UserName = adminEmail,
+                Email = adminEmail,
                 EmailConfirmed = true
             };
 
-            await userManager.CreateAsync(adminUser, "AdminP@ss123!");
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+        }
+
+        var trainerEmail = "trainer@fitnesstracker.com";
+        var trainerUser = await userManager.FindByEmailAsync(trainerEmail);
+        if (trainerUser == null)
+        {
+            trainerUser = new IdentityUser
+            {
+                UserName = trainerEmail,
+                Email = trainerEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(trainerUser, "Trainer123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(trainerUser, "Trainer");
+            }
         }
     }
 }
