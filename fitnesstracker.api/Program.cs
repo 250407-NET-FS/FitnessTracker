@@ -280,7 +280,7 @@ app.MapDelete("/users/{userId}/exercises/{exerciseId}", async (Guid userId, Guid
 app.MapGet("/users/{userId}/exercises", async (Guid userId, IMediator mediator) =>
 {
     var exercises = await mediator.Send(new GetUserExercisesQuery(userId));
-    return exercises.Any() ? Results.Ok(exercises) : Results.NotFound();
+    return Results.Ok(exercises);
 })
 .WithName("GetUserExercises")
 .WithTag("User Exercises");

@@ -30,13 +30,12 @@ const Login = ({ onClose }: { onClose: () => void }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: email, // Keep as 'username' since backend expects this
+                    username: email,
                     password: password
                 }),
             });
 
             if (!response.ok) {
-                // Try to get detailed error message
                 const errorData = await response.json().catch(() => null);
                 console.error('Login failed response:', errorData);
                 throw new Error(errorData?.detail || 'Login failed');

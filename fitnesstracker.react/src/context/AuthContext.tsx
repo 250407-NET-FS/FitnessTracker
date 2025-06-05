@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface AuthContextType {
+export interface AuthContextType {
     isAuthenticated: boolean;
-    userRole: string | null;
+    userRole: string;
+    userId: string | null;
     login: (token: string, role: string) => void;
     logout: () => void;
 }
@@ -11,28 +12,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string>('');
+    const [userId, setUserId] = useState<string | null>(null);
 
-    // Check for existing token on mount
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
             try {
-                // Check if token is valid and not expired
                 const payload = parseJwt(token);
-                const expiration = payload.exp * 1000; // Convert to milliseconds
+                const expiration = payload.exp * 1000;
 
                 if (Date.now() < expiration) {
-                    // Valid token, extract role
                     setIsAuthenticated(true);
 
-                    // Find role claim
                     const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
                     const role = Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
 
                     setUserRole(role || 'User');
+                    setUserId(payload.sub || null);
                 } else {
-                    // Token expired, remove it
                     localStorage.removeItem('token');
                 }
             } catch (error) {
@@ -61,17 +59,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('token', token);
         setIsAuthenticated(true);
         setUserRole(role);
+        const payload = parseJwt(token);
+        setUserId(payload.sub || null);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         setIsAuthenticated(false);
-        setUserRole(null);
-        window.location.reload(); // Reload to reset state
+        setUserRole('');
+        setUserId(null);
+        window.location.reload();
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, userRole, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, userRole, userId, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

@@ -30,10 +30,11 @@ const UserExercisesPage = () => {
     const [userName, setUserName] = useState<string>('');
 
     useEffect(() => {
-        if (!isAuthenticated || (userRole !== 'Admin' && userRole !== 'Trainer')) {
+        if (!isAuthenticated) {
             navigate('/');
+            return;
         }
-    }, [isAuthenticated, userRole, navigate]);
+    }, [isAuthenticated, navigate]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -55,11 +56,14 @@ const UserExercisesPage = () => {
 
         try {
             setLoading(true);
+            console.log(`Fetching exercises for user: ${userId}`);
             const data = await fetchWithAuth(`/users/${userId}/exercises`);
-            setExercises(data);
+            console.log('Received exercises:', data);
+            setExercises(Array.isArray(data) ? data : []);
         } catch (err) {
+            console.error('Error fetching exercises:', err);
             setError(err instanceof Error ? err.message : 'Failed to load exercises');
-            console.error(err);
+            setExercises([]);
         } finally {
             setLoading(false);
         }
@@ -148,14 +152,16 @@ const UserExercisesPage = () => {
                         {userName ? `${userName}'s Exercises` : `User Exercises`}
                     </Typography>
                 </Box>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddExercise}
-                >
-                    Add Exercise
-                </Button>
+                {(userRole === 'Admin' || userRole === 'Trainer') && (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<AddIcon />}
+                        onClick={handleAddExercise}
+                    >
+                        Add Exercise
+                    </Button>
+                )}
             </Box>
 
             {error && (
@@ -204,6 +210,7 @@ const UserExercisesPage = () => {
                                             color="error"
                                             onClick={() => handleRemoveExercise(exercise.id)}
                                             aria-label="delete"
+                                            sx={{ display: (userRole === 'Admin' || userRole === 'Trainer') ? 'flex' : 'none' }}
                                         >
                                             <DeleteIcon />
                                         </IconButton>

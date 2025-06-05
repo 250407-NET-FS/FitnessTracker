@@ -7,19 +7,20 @@ import type { User } from '../types/types';
 
 interface UserCardProps {
     user: User;
-    onUserDeleted?: () => void; // Callback to refresh user list after deletion
+    onUserDeleted?: () => void;
 }
 
 const UserCard = ({ user, onUserDeleted }: UserCardProps) => {
-    const { isAuthenticated, userRole } = useAuth();
+    const { isAuthenticated, userRole, userId } = useAuth();
     const navigate = useNavigate();
     const [openDialog, setOpenDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const isTrainer = userRole === 'Admin' || userRole === 'Trainer';
     const isAdmin = userRole === 'Admin';
+    const isCurrentUser = userId === user.id;
 
-    const handleManageExercises = () => {
+    const handleViewExercises = () => {
         navigate(`/users/${user.id}/exercises`);
     };
 
@@ -35,7 +36,6 @@ const UserCard = ({ user, onUserDeleted }: UserCardProps) => {
             });
             setOpenDialog(false);
 
-            // Call the callback to refresh user list
             if (onUserDeleted) {
                 onUserDeleted();
             }
@@ -81,17 +81,16 @@ const UserCard = ({ user, onUserDeleted }: UserCardProps) => {
             </CardContent>
             {isAuthenticated && (
                 <CardActions sx={{ flexDirection: 'column', gap: 1, padding: 2 }}>
-                    {isTrainer && (
-                        <Button
-                            size="small"
-                            variant="contained"
-                            color="primary"
-                            onClick={handleManageExercises}
-                            fullWidth
-                        >
-                            Manage Exercises
-                        </Button>
-                    )}
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={handleViewExercises}
+                        fullWidth
+                    >
+                        {isTrainer ? 'Manage Exercises' : 'View Exercises'}
+                    </Button>
+
                     {isAdmin && (
                         <Button
                             size="small"
@@ -106,7 +105,6 @@ const UserCard = ({ user, onUserDeleted }: UserCardProps) => {
                 </CardActions>
             )}
 
-            {/* Confirmation Dialog */}
             <Dialog
                 open={openDialog}
                 onClose={handleCancelDelete}
