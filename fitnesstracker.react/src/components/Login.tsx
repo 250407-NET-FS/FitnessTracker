@@ -57,14 +57,33 @@ const Login = ({ onClose }: { onClose: () => void }) => {
 
     const getUserRoleFromToken = (token: string): string => {
         try {
-            const base64Url = token.split('.')[1];
+            if (!token || typeof token !== 'string' || !token.includes('.')) {
+                console.error('Invalid token format');
+                return 'User';
+            }
+
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+                console.error('Invalid JWT format');
+                return 'User';
+            }
+
+            const base64Url = parts[1];
+
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+            const jsonPayload = decodeURIComponent(
+                window.atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
 
             const payload = JSON.parse(jsonPayload);
-            const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
+            const roleClaim =
+                payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+                payload['role'] ||
+                payload['roles'];
 
             if (roleClaim) {
                 return Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
