@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../utils/api';
 
 const Login = ({ onClose }: { onClose: () => void }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -13,8 +13,8 @@ const Login = ({ onClose }: { onClose: () => void }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!username || !password) {
-            setError('Please enter both username and password');
+        if (!email || !password) {
+            setError('Please enter both email and password');
             return;
         }
 
@@ -22,29 +22,32 @@ const Login = ({ onClose }: { onClose: () => void }) => {
         setError(null);
 
         try {
+            console.log(`Attempting login with email: ${email}`);
+
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: username,
+                    username: email, // Keep as 'username' since backend expects this
                     password: password
                 }),
             });
 
             if (!response.ok) {
+                // Try to get detailed error message
                 const errorData = await response.json().catch(() => null);
+                console.error('Login failed response:', errorData);
                 throw new Error(errorData?.detail || 'Login failed');
             }
 
             const data = await response.json();
-
+            console.log('Login successful, received token');
             const token = data.token;
 
             login(token, getUserRoleFromToken(token));
             onClose();
-
         } catch (err) {
             console.error('Login error:', err);
             setError(err instanceof Error ? err.message : 'Login failed');
@@ -88,8 +91,8 @@ const Login = ({ onClose }: { onClose: () => void }) => {
                     fullWidth
                     label="Email"
                     margin="normal"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
                     autoFocus
                 />

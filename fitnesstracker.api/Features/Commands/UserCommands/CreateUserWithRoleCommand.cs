@@ -39,9 +39,21 @@ public class CreateUserWithRoleCommandHandler : IRequestHandler<CreateUserWithRo
 
         var result = await _userManager.CreateAsync(identityUser, request.Password);
 
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(identityUser, request.IsTrainer ? "Trainer" : "User");
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to create identity user: {errors}");
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(
+            identityUser,
+            request.IsTrainer ? "Trainer" : "User"
+        );
+
+        if (!roleResult.Succeeded)
+        {
+            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to assign role: {errors}");
         }
 
         return user.Id;

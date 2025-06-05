@@ -20,6 +20,11 @@ public static class SeedData
             await roleManager.CreateAsync(new IdentityRole("Trainer"));
         }
 
+        if (!await roleManager.RoleExistsAsync("User"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("User"));
+        }
+
         var adminEmail = "admin@fitnesstracker.com";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)

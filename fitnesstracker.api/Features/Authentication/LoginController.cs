@@ -17,12 +17,23 @@ public static class LoginController
         {
             try
             {
+                Console.WriteLine($"Login attempt for: {request.Username}");
+
                 var user = await userManager.FindByEmailAsync(request.Username);
+
                 if (user == null)
                 {
-                    Console.WriteLine($"User not found: {request.Username}");
-                    return Results.Unauthorized();
+                    Console.WriteLine($"User not found by email, trying username: {request.Username}");
+                    user = await userManager.FindByNameAsync(request.Username);
+
+                    if (user == null)
+                    {
+                        Console.WriteLine($"User not found by username either: {request.Username}");
+                        return Results.Unauthorized();
+                    }
                 }
+
+                Console.WriteLine($"User found: {user.UserName}, validating password");
 
                 var isPasswordValid = await userManager.CheckPasswordAsync(user, request.Password);
                 if (!isPasswordValid)
@@ -30,6 +41,8 @@ public static class LoginController
                     Console.WriteLine("Invalid password");
                     return Results.Unauthorized();
                 }
+
+                Console.WriteLine("Password validated, generating token");
 
                 var roles = await userManager.GetRolesAsync(user);
                 var claims = new List<Claim>
