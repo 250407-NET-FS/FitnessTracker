@@ -40,8 +40,8 @@ describe('Login Component', () => {
         const passwordInput = screen.getByLabelText('Password');
         const submitButton = screen.getByRole('button', { name: /^Login$/ });
 
-        await userEvent.type(emailInput, 'test@example.com');
-        await userEvent.type(passwordInput, 'password123');
+        await userEvent.type(emailInput, 'test@test.com');
+        await userEvent.type(passwordInput, 'Password123!');
 
         fireEvent.click(submitButton);
 
@@ -51,8 +51,8 @@ describe('Login Component', () => {
                 expect.objectContaining({
                     method: 'POST',
                     body: JSON.stringify({
-                        username: 'test@example.com',
-                        password: 'password123'
+                        username: 'test@test.com',
+                        password: 'Password123!'
                     })
                 })
             );
