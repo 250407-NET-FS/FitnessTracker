@@ -190,7 +190,7 @@ const UserExercisesPage = () => {
             ) : (
                 <Grid container spacing={2}>
                     {exercises.map((exercise) => (
-                        <Grid item xs={12} key={exercise.id}>
+                        <Grid key={exercise.id} sx={{ gridColumn: 'span 12' }}>
                             <Card>
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

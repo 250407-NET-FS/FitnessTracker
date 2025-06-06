@@ -11,14 +11,13 @@ interface UserCardProps {
 }
 
 const UserCard = ({ user, onUserDeleted }: UserCardProps) => {
-    const { isAuthenticated, userRole, userId } = useAuth();
+    const { isAuthenticated, userRole } = useAuth();
     const navigate = useNavigate();
     const [openDialog, setOpenDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const isTrainer = userRole === 'Admin' || userRole === 'Trainer';
     const isAdmin = userRole === 'Admin';
-    const isCurrentUser = userId === user.id;
 
     const handleViewExercises = () => {
         navigate(`/users/${user.id}/exercises`);
