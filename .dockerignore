@@ -5,3 +5,11 @@
 .git
 Dockerfile
 *.log
+**/bin/
+**/obj/
+**/node_modules/
+**/.git/
+**/.vs/
+**/.vscode/
+**/dist/
+**/*.user

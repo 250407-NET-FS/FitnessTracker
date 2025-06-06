@@ -1,0 +1,34 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS backend-build
+WORKDIR /src
+
+COPY ["fitnesstracker.api/fitnesstracker.api.csproj", "fitnesstracker.api/"]
+COPY ["fitnesstracker.data/fitnesstracker.data.csproj", "fitnesstracker.data/"]
+COPY ["fitnesstracker.model/fitnesstracker.model.csproj", "fitnesstracker.model/"]
+RUN dotnet restore "fitnesstracker.api/fitnesstracker.api.csproj"
+
+COPY . .
+RUN dotnet build "fitnesstracker.api/fitnesstracker.api.csproj" -c Release -o /app/build
+RUN dotnet publish "fitnesstracker.api/fitnesstracker.api.csproj" -c Release -o /app/publish
+
+FROM node:20-alpine AS frontend-build
+WORKDIR /src/frontend
+COPY fitnesstracker.react/package.json fitnesstracker.react/package-lock.json* ./
+RUN npm install --verbose
+
+COPY fitnesstracker.react/ ./
+RUN npm run build || (cat npm-debug.log 2>/dev/null || true && exit 1)
+
+
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+COPY --from=backend-build /app/publish .
+
+COPY --from=frontend-build /src/frontend/dist ./wwwroot
+
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+EXPOSE 80
+ENTRYPOINT ["dotnet", "fitnesstracker.api.dll"]
