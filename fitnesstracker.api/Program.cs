@@ -160,7 +160,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FitnessTracker API v1"));
 }
 
-app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 // Enable CORS
@@ -292,5 +299,7 @@ app.MapGet("/exercises/{exerciseId}/users", async (Guid exerciseId, IMediator me
 })
 .WithName("GetExerciseUsers")
 .WithTag("User Exercises");
+
+app.MapFallbackToFile("index.html");
 
 app.Run();

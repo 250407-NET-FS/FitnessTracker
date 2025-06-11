@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:5293';
+export const API_BASE_URL = window.location.origin;
 
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('token');

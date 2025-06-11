@@ -17,6 +17,7 @@ RUN npm install --verbose
 
 COPY fitnesstracker.react/ ./
 RUN npm run build || (cat npm-debug.log 2>/dev/null || true && exit 1)
+RUN ls -la /src/frontend/dist
 
 
 
